@@ -18,7 +18,7 @@ on:
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-  ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}   # new: just the short registry name
+  ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}
   IMAGE_TAG: ${{ github.sha }}-${{ github.run_id }}
 
 jobs:
@@ -76,7 +76,7 @@ jobs:
           pip install pytest httpx flake8
 
       - name: Run lint checks
-        run: flake8 backend/
+        run: flake8 backend/ --config=.flake8
 
       - name: Run product_service tests
         working-directory: backend/product_service
@@ -101,7 +101,7 @@ jobs:
   build_and_push_images:
     runs-on: ubuntu-latest
     needs: test_and_lint_backends
-    if: github.ref == 'refs/heads/main'  # only build/push on main
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
