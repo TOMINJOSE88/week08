@@ -8,7 +8,7 @@ on:
         required: true
         default: 'http://<ip_address>:8000'
       order_api_ip:
-        description: 'External IP of Order Service'
+        description: 'External IP of Order Service (e.g., http://Y.Y.Y.Y:8001)'
         required: true
         default: 'http://<ip_address>:8001'
       aks_cluster_name:
@@ -19,6 +19,13 @@ on:
         description: 'Resource Group of the AKS Cluster'
         required: true
         default: '<resource_group_name>'
+
+  workflow_call:
+    inputs:
+      product_api_ip: { required: true, type: string }
+      order_api_ip:   { required: true, type: string }
+      aks_cluster_name: { required: true, type: string }
+      aks_resource_group: { required: true, type: string }
 
 jobs:
   deploy_frontend:
@@ -43,10 +50,6 @@ jobs:
           sed -i "s|_PRODUCT_API_URL_|${{ inputs.product_api_ip }}|g" frontend/main.js
           sed -i "s|_ORDER_API_URL_|${{ inputs.order_api_ip }}|g" frontend/main.js
 
-          echo "--- Modified main.js content ---"
-          cat frontend/main.js
-          echo "---------------------------------"
-
       - name: Build and Push Frontend Image
         run: |
           docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/frontend:${{ github.sha }} ./frontend/
@@ -61,8 +64,9 @@ jobs:
       - name: Deploy Frontend to AKS
         run: |
           echo "Deploying frontend with image tag: ${{ github.sha }}"
-          kubectl apply -f k8s/frontend.yaml
-          kubectl set image deployment/frontend frontend=${{ secrets.AZURE_CONTAINER_REGISTRY }}/frontend:${{ github.sha }}
+          cd k8s/
+          kubectl apply -f frontend.yaml
+          kubectl set image deployment/frontend frontend-container=${{ secrets.AZURE_CONTAINER_REGISTRY }}/frontend:${{ github.sha }}
 
       - name: Logout from Azure
         run: az logout
